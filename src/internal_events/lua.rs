@@ -88,7 +88,6 @@ fn mlua_error_code(err: &mlua::Error) -> &'static str {
         StackError => "out_of_stack",
         BindError => "too_many_arguments_to_function_bind",
         BadArgument { .. } => "bad_argument",
-        ToLuaConversionError { .. } => "error_converting_value_to_lua",
         FromLuaConversionError { .. } => "error_converting_value_from_lua",
         CoroutineUnresumable => "coroutine_unresumable",
         UserDataTypeMismatch => "userdata_type_mismatch",

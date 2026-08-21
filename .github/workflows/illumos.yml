@@ -1,0 +1,94 @@
+name: Illumos
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: illumos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build x86_64-unknown-illumos release
+    if: github.repository == 'notpeter/vector'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout Vector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build and package on OmniOS
+        uses: vmactions/omnios-vm@v1
+        with:
+          release: r151054-build
+          mem: 12288
+          sync: rsync
+          copyback: true
+          cache-after-prepare: true
+          prepare: |
+            pkg publisher extra.omnios >/dev/null 2>&1 || pkg set-publisher -g https://pkg.omnios.org/r151058/extra extra.omnios
+            pkg refresh extra.omnios
+            pkg install --accept \
+              library/security/openssl-3 \
+              ooce/developer/clang-15 \
+              ooce/developer/cmake \
+              ooce/developer/protobuf \
+              ooce/library/onig \
+              shell/bash
+
+            export PATH=/opt/ooce/bin:/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin
+            export RUSTUP_HOME=/opt/rustup
+            export CARGO_HOME=/opt/cargo
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+              sh -s -- -y --profile minimal --default-toolchain 1.95 --no-modify-path
+
+            mkdir -p /usr/local/bin
+            ln -sf /usr/bin/gmake /usr/local/bin/make
+          run: |
+            export PATH=/opt/cargo/bin:/usr/local/bin:/opt/ooce/bin:/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin
+            export RUSTUP_HOME=/opt/rustup
+            export CARGO_HOME=/opt/cargo
+            export PKG_CONFIG_PATH=/opt/ooce/lib/amd64/pkgconfig:/opt/ooce/lib/pkgconfig
+            export LD_LIBRARY_PATH=/opt/ooce/lib/amd64:/opt/ooce/lib
+            export RUSTONIG_SYSTEM_LIBONIG=1
+            export CARGO_INCREMENTAL=0
+            export CARGO_PROFILE_RELEASE_LTO=thin
+
+            rustc --version
+            cargo --version
+            protoc --version
+
+            cargo build \
+              --locked \
+              --release \
+              --no-default-features \
+              --features target-x86_64-unknown-illumos \
+              --bin vector
+            ldd target/release/vector
+            target/release/vector --version
+
+            TARGET=x86_64-unknown-illumos \
+              NATIVE_BUILD=true \
+              VECTOR_VERSION="illumos-$GITHUB_SHA" \
+              bash scripts/package-archive.sh
+
+            rm -rf illumos-artifacts
+            mkdir -p illumos-artifacts
+            cp target/artifacts/*.tar.gz illumos-artifacts/
+            cd illumos-artifacts
+            for archive in *.tar.gz; do
+              sha256sum "$archive" > "$archive.sha256"
+            done
+            cd ..
+            cargo clean
+
+      - name: Upload illumos release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vector-x86_64-unknown-illumos-${{ github.sha }}
+          path: illumos-artifacts/
+          if-no-files-found: error
+          retention-days: 14
