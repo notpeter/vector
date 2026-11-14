@@ -629,7 +629,7 @@ dependencies = [
 [[package]]
 name = "arrow-flight"
 version = "60.0.0"
-source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=ec254b8dd2e6afdb64b10306b5d357a49d552dba#ec254b8dd2e6afdb64b10306b5d357a49d552dba"
+source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=9058096a1ba2c44781f089ad036631064e4b4727#9058096a1ba2c44781f089ad036631064e4b4727"
 dependencies = [
  "arrow-array 60.1.0",
  "arrow-buffer 60.1.0",
@@ -3681,7 +3681,7 @@ dependencies = [
 [[package]]
 name = "databricks-zerobus-ingest-sdk"
 version = "3.2.0"
-source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=ec254b8dd2e6afdb64b10306b5d357a49d552dba#ec254b8dd2e6afdb64b10306b5d357a49d552dba"
+source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=9058096a1ba2c44781f089ad036631064e4b4727#9058096a1ba2c44781f089ad036631064e4b4727"
 dependencies = [
  "arrow-array 60.1.0",
  "arrow-flight 60.0.0",
