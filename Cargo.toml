@@ -573,8 +573,8 @@ zstd = { workspace = true, features = ["zdict_builder"] }
 ntapi = { git = "https://github.com/MSxDOS/ntapi.git", rev = "24fc1e47677fc9f6e38e5f154e6011dc9b270da6" }
 databricks-zerobus-ingest-sdk = { git = "https://github.com/notpeter/zerobus-sdk.git", rev = "9058096a1ba2c44781f089ad036631064e4b4727" }
 rdkafka-sys = { git = "https://github.com/notpeter/rust-rdkafka.git", rev = "96567500c0dd8c12a5d49ec15368c7bc13c0f707" }
-tikv-jemallocator = { git = "https://github.com/notpeter/jemallocator.git", rev = "c68e7893b9f61be5440b66760bf995a297155d41" }
-tikv-jemalloc-sys = { git = "https://github.com/notpeter/jemallocator.git", rev = "c68e7893b9f61be5440b66760bf995a297155d41" }
+tikv-jemallocator = { git = "https://github.com/notpeter/jemallocator.git", rev = "48baf450abc8199af0deff3ffc145d0c0a37aa02" }
+tikv-jemalloc-sys = { git = "https://github.com/notpeter/jemallocator.git", rev = "48baf450abc8199af0deff3ffc145d0c0a37aa02" }
 
 [features]
 # Default features for *-unknown-linux-gnu and *-apple-darwin.
