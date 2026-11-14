@@ -32,6 +32,7 @@ jobs:
             pkg publisher extra.omnios >/dev/null 2>&1 || pkg set-publisher -g https://pkg.omnios.org/r151058/extra extra.omnios
             pkg refresh extra.omnios
             pkg install --accept \
+              developer/pkg-config \
               library/security/openssl-3 \
               ooce/developer/clang-15 \
               ooce/developer/cmake \
@@ -60,6 +61,7 @@ jobs:
             rustc --version
             cargo --version
             protoc --version
+            pkg-config --libs --cflags 'oniguruma >= 6.9.3' || exit 1
 
             cargo build \
               --locked \
