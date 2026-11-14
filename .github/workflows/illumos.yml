@@ -29,10 +29,11 @@ jobs:
           copyback: true
           cache-after-prepare: true
           prepare: |
-            pkg publisher extra.omnios >/dev/null 2>&1 || pkg set-publisher -g https://pkg.omnios.org/r151058/extra extra.omnios
+            pkg publisher extra.omnios >/dev/null 2>&1 || pkg set-publisher -g https://pkg.omnios.org/r151054/extra extra.omnios
             pkg refresh extra.omnios
             pkg install --accept \
               developer/pkg-config \
+              developer/versioning/git \
               library/security/openssl-3 \
               ooce/developer/clang-15 \
               ooce/developer/cmake \
@@ -61,6 +62,7 @@ jobs:
             rustc --version
             cargo --version
             protoc --version
+            git rev-parse --verify HEAD || exit 1
             pkg-config --libs --cflags 'oniguruma >= 6.9.3' || exit 1
 
             cargo build \
