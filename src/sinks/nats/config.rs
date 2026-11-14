@@ -6,14 +6,14 @@ use vector_lib::{codecs::JsonSerializerConfig, tls::TlsEnableableConfig};
 
 use super::{ConfigSnafu, ConnectSnafu, NatsError, sink::NatsSink};
 use crate::{
-    config::{DynValidatedSink, ValidatedSink},
+    config::ValidatedSink,
     nats::{NatsAuthConfig, NatsConfigError, from_tls_auth_config, validate_tls_cert_key_pair},
     sinks::{prelude::*, util::service::TowerRequestConfigDefaults},
     template::ConfinementConfig,
 };
 
 #[derive(Clone, Copy, Debug)]
-pub struct NatsTowerRequestConfigDefaults;
+pub(super) struct NatsTowerRequestConfigDefaults;
 
 impl TowerRequestConfigDefaults for NatsTowerRequestConfigDefaults {
     const CONCURRENCY: Concurrency = Concurrency::None;
@@ -24,7 +24,7 @@ impl TowerRequestConfigDefaults for NatsTowerRequestConfigDefaults {
 #[serde_with::serde_as]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub struct NatsHeaderConfig {
+pub(super) struct NatsHeaderConfig {
     /// A unique identifier for the message. Useful for deduplication.
     ///
     /// Can be a template that references fields in the event, e.g., `{{ event_id }}`.
@@ -35,7 +35,7 @@ pub struct NatsHeaderConfig {
 }
 
 impl NatsHeaderConfig {
-    pub fn build_headers(&self, event: &Event) -> HeaderMap {
+    pub(super) fn build_headers(&self, event: &Event) -> HeaderMap {
         let mut headers = HeaderMap::new();
 
         if let Some(template) = &self.message_id
@@ -53,9 +53,8 @@ impl NatsHeaderConfig {
 #[serde_with::serde_as]
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
-pub struct JetStreamConfig {
+pub(super) struct JetStreamConfig {
     /// Whether to enable Jetstream.
-    #[configurable(derived)]
     #[serde(default)]
     pub enabled: bool,
 
@@ -82,10 +81,8 @@ impl From<bool> for JetStreamConfig {
 #[derive(Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct NatsSinkConfig {
-    #[configurable(derived)]
     pub(super) encoding: EncodingConfig,
 
-    #[configurable(derived)]
     #[serde(
         default,
         deserialize_with = "crate::serde::bool_or_struct",
@@ -127,13 +124,10 @@ pub struct NatsSinkConfig {
     ))]
     pub(super) url: String,
 
-    #[configurable(derived)]
     pub(super) tls: Option<TlsEnableableConfig>,
 
-    #[configurable(derived)]
     pub(super) auth: Option<NatsAuthConfig>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(super) request: TowerRequestConfig<NatsTowerRequestConfigDefaults>,
 
@@ -142,7 +136,6 @@ pub struct NatsSinkConfig {
     /// If set, the `subject` must belong to an existing JetStream stream.
     ///
     /// [jetstream]: https://docs.nats.io/nats-concepts/jetstream
-    #[configurable(derived)]
     #[serde(
         default,
         deserialize_with = "crate::serde::bool_or_struct",
@@ -150,7 +143,6 @@ pub struct NatsSinkConfig {
     )]
     pub(super) jetstream: JetStreamConfig,
 
-    #[configurable(derived)]
     #[serde(flatten)]
     pub confinement: ConfinementConfig,
 }
@@ -162,14 +154,14 @@ fn default_name() -> String {
 impl GenerateConfig for NatsSinkConfig {
     fn generate_config() -> serde_json::Value {
         serde_json::to_value(Self {
-            acknowledgements: Default::default(),
+            acknowledgements: AcknowledgementsConfig::default(),
             auth: None,
             connection_name: "vector".into(),
             encoding: JsonSerializerConfig::default().into(),
             subject: Template::try_from("from.vector").unwrap(),
             tls: None,
             url: "nats://127.0.0.1:4222".into(),
-            request: Default::default(),
+            request: TowerRequestConfig::default(),
             jetstream: JetStreamConfig {
                 enabled: true,
                 headers: Some(NatsHeaderConfig {
@@ -196,10 +188,6 @@ impl SinkConfig for NatsSinkConfig {
     fn acknowledgements(&self) -> &AcknowledgementsConfig {
         &self.acknowledgements
     }
-
-    fn as_dyn_validated(&self) -> Option<&dyn DynValidatedSink> {
-        Some(self)
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -218,6 +206,7 @@ impl ValidatedSink for NatsSinkConfig {
             .clone()
             .confine(&self.confinement, Self::NAME, "subject")?;
         let server_addresses = self.parse_server_addresses()?;
+        self.encoding.validate()?;
 
         if let Some(tls) = &self.tls {
             validate_tls_cert_key_pair(tls).context(ConfigSnafu)?;
@@ -248,7 +237,11 @@ impl std::convert::TryFrom<&NatsSinkConfig> for async_nats::ConnectOptions {
     type Error = NatsConfigError;
 
     fn try_from(config: &NatsSinkConfig) -> Result<Self, Self::Error> {
-        from_tls_auth_config(&config.connection_name, &config.auth, &config.tls)
+        from_tls_auth_config(
+            &config.connection_name,
+            config.auth.as_ref(),
+            config.tls.as_ref(),
+        )
     }
 }
 
@@ -314,11 +307,11 @@ async fn healthcheck(
     config
         .connect(options, server_addresses)
         .map_ok(|_| ())
-        .map_err(|e| e.into())
+        .map_err(std::convert::Into::into)
         .await
 }
 
-pub enum NatsPublisher {
+pub(super) enum NatsPublisher {
     Core(async_nats::Client),
     JetStream(async_nats::jetstream::Context),
 }
@@ -340,7 +333,7 @@ impl NatsPublisher {
                     })?;
                 client
                     .flush()
-                    .map_ok(|_| ())
+                    .map_ok(|()| ())
                     .map_err(|e| NatsError::PublishError {
                         source: Box::new(e),
                     })

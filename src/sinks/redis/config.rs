@@ -9,14 +9,14 @@ use super::{
     sink::{RedisConnection, RedisSink},
 };
 use crate::{
-    config::{DynValidatedSink, ValidatedSink},
+    config::ValidatedSink,
     serde::OneOrMany,
     sinks::{prelude::*, util::service::TowerRequestConfigDefaults},
     template::ConfinementConfig,
 };
 
 #[derive(Clone, Copy, Debug)]
-pub struct RedisTowerRequestConfigDefaults;
+pub(super) struct RedisTowerRequestConfigDefaults;
 
 impl TowerRequestConfigDefaults for RedisTowerRequestConfigDefaults {
     const CONCURRENCY: Concurrency = Concurrency::None;
@@ -26,7 +26,7 @@ impl TowerRequestConfigDefaults for RedisTowerRequestConfigDefaults {
 #[configurable_component]
 #[derive(Clone, Copy, Debug, Default)]
 #[serde(rename_all = "lowercase")]
-pub enum DataTypeConfig {
+pub(super) enum DataTypeConfig {
     /// The Redis `list` type.
     ///
     /// This resembles a deque, where messages can be popped and pushed from either end.
@@ -51,7 +51,7 @@ pub enum DataTypeConfig {
 #[configurable_component]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
-pub struct ListOption {
+pub(super) struct ListOption {
     /// The method to use for pushing messages into a `list`.
     pub method: ListMethod,
 }
@@ -79,7 +79,7 @@ pub enum ListMethod {
 #[configurable_component]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
-pub struct SortedSetOption {
+pub(super) struct SortedSetOption {
     /// The method to use for pushing messages into a `sorted set`.
     pub method: Option<SortedSetMethod>,
 
@@ -109,7 +109,7 @@ pub enum SortedSetMethod {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct RedisDefaultBatchSettings;
+pub(super) struct RedisDefaultBatchSettings;
 
 impl SinkBatchSettings for RedisDefaultBatchSettings {
     const MAX_EVENTS: Option<usize> = Some(1);
@@ -121,19 +121,15 @@ impl SinkBatchSettings for RedisDefaultBatchSettings {
 #[configurable_component(sink("redis", "Publish observability data to Redis."))]
 #[derive(Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct RedisSinkConfig {
-    #[configurable(derived)]
+pub(super) struct RedisSinkConfig {
     pub(super) encoding: EncodingConfig,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(super) data_type: DataTypeConfig,
 
-    #[configurable(derived)]
     #[serde(alias = "list")]
     pub(super) list_option: Option<ListOption>,
 
-    #[configurable(derived)]
     #[serde(alias = "sorted_set")]
     pub(super) sorted_set_option: Option<SortedSetOption>,
 
@@ -152,7 +148,6 @@ pub struct RedisSinkConfig {
     #[configurable]
     pub(super) sentinel_service: Option<String>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(super) sentinel_connect: Option<SentinelConnectionSettings>,
 
@@ -161,15 +156,12 @@ pub struct RedisSinkConfig {
     #[configurable(metadata(docs::examples = "syslog:{{ app }}", docs::examples = "vector"))]
     pub(super) key: Template,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(super) batch: BatchConfig<RedisDefaultBatchSettings>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(super) request: TowerRequestConfig<RedisTowerRequestConfigDefaults>,
 
-    #[configurable(derived)]
     #[serde(
         default,
         deserialize_with = "crate::serde::bool_or_struct",
@@ -177,7 +169,6 @@ pub struct RedisSinkConfig {
     )]
     pub(super) acknowledgements: AcknowledgementsConfig,
 
-    #[configurable(derived)]
     #[serde(flatten)]
     pub confinement: ConfinementConfig,
 }
@@ -215,14 +206,10 @@ impl SinkConfig for RedisSinkConfig {
     fn acknowledgements(&self) -> &AcknowledgementsConfig {
         &self.acknowledgements
     }
-
-    fn as_dyn_validated(&self) -> Option<&dyn DynValidatedSink> {
-        Some(self)
-    }
 }
 
 #[derive(Clone, Debug)]
-pub struct ValidatedRedisSink {
+pub(super) struct ValidatedRedisSink {
     key: ConfinedTemplate,
     batch_settings: BatcherSettings,
 }
@@ -247,6 +234,7 @@ impl ValidatedSink for RedisSinkConfig {
                 return Err(format!("`endpoint` is not a valid redis URL: {endpoint}").into());
             }
         }
+        self.encoding.validate()?;
         let batch_settings = self.batch.into_batcher_settings()?;
         Ok(ValidatedRedisSink {
             key,
@@ -314,11 +302,9 @@ impl RedisSinkConfig {
 #[derive(Clone, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct SentinelConnectionSettings {
-    #[configurable(derived)]
     #[serde(default)]
     pub tls: MaybeTlsMode,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub connections: Option<RedisConnectionSettings>,
 }

@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use rand::RngExt;
 use rumqttc::{MqttOptions, QoS, TlsConfiguration, Transport};
 use snafu::ResultExt;
@@ -11,9 +9,7 @@ use crate::{
         ConfigurationError, ConfigurationSnafu, MqttCommonConfig, MqttConnector, MqttError,
         TlsSnafu,
     },
-    config::{
-        AcknowledgementsConfig, DynValidatedSink, Input, SinkConfig, SinkContext, ValidatedSink,
-    },
+    config::{AcknowledgementsConfig, Input, SinkConfig, SinkContext, ValidatedSink},
     sinks::{Healthcheck, VectorSink, mqtt::sink::MqttSink, prelude::*},
     template::{ConfinementConfig, Template},
     tls::MaybeTlsSettings,
@@ -37,10 +33,8 @@ pub struct MqttSinkConfig {
     #[serde(default = "default_retain")]
     pub retain: bool,
 
-    #[configurable(derived)]
     pub encoding: EncodingConfig,
 
-    #[configurable(derived)]
     #[serde(
         default,
         deserialize_with = "crate::serde::bool_or_struct",
@@ -48,11 +42,9 @@ pub struct MqttSinkConfig {
     )]
     pub acknowledgements: AcknowledgementsConfig,
 
-    #[configurable(derived)]
     #[serde(default = "default_qos")]
     pub quality_of_service: MqttQoS,
 
-    #[configurable(derived)]
     #[serde(flatten)]
     pub confinement: ConfinementConfig,
 }
@@ -63,14 +55,14 @@ pub struct MqttSinkConfig {
 #[serde(rename_all = "lowercase")]
 #[allow(clippy::enum_variant_names)]
 pub enum MqttQoS {
-    /// AtLeastOnce.
+    /// `AtLeastOnce`.
     #[default]
     AtLeastOnce,
 
-    /// AtMostOnce.
+    /// `AtMostOnce`.
     AtMostOnce,
 
-    /// ExactlyOnce.
+    /// `ExactlyOnce`.
     ExactlyOnce,
 }
 
@@ -128,10 +120,6 @@ impl SinkConfig for MqttSinkConfig {
     fn acknowledgements(&self) -> &AcknowledgementsConfig {
         &self.acknowledgements
     }
-
-    fn as_dyn_validated(&self) -> Option<&dyn DynValidatedSink> {
-        Some(self)
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -160,6 +148,7 @@ impl ValidatedSink for MqttSinkConfig {
                 }));
             }
         }
+        self.encoding.validate()?;
         let topic = self
             .topic
             .clone()
@@ -177,7 +166,7 @@ impl ValidatedSink for MqttSinkConfig {
         let sink = MqttSink::new(self, topic, connector.clone())?;
         Ok((
             VectorSink::from_event_streamsink(sink),
-            Box::pin(async move { connector.healthcheck().await }),
+            Box::pin(async move { connector.healthcheck() }),
         ))
     }
 }
@@ -198,13 +187,14 @@ impl MqttSinkConfig {
         }
         let tls =
             MaybeTlsSettings::from_config(self.common.tls.as_ref(), false).context(TlsSnafu)?;
-        let mut options = MqttOptions::new(&client_id, &self.common.host, self.common.port);
-        options.set_keep_alive(Duration::from_secs(self.common.keep_alive.into()));
+        let mut options =
+            MqttOptions::new(&client_id, (self.common.host.as_str(), self.common.port));
+        options.set_keep_alive(self.common.keep_alive);
         options.set_max_packet_size(self.common.max_packet_size, self.common.max_packet_size);
         options.set_clean_session(self.clean_session);
         match (&self.common.user, &self.common.password) {
             (Some(user), Some(password)) => {
-                options.set_credentials(user, password);
+                options.set_credentials(user, password.clone());
             }
             (None, None) => {}
             _ => {
@@ -224,8 +214,10 @@ impl MqttSinkConfig {
                 .as_ref()
                 .and_then(|tls| tls.options.alpn_protocols.as_ref())
                 .filter(|protocols| !protocols.is_empty())
-                .map(|protocols| protocols.iter().map(|p| p.clone().into_bytes()).collect())
-                .unwrap_or_else(|| vec![b"mqtt".to_vec()]);
+                .map_or_else(
+                    || vec![b"mqtt".to_vec()],
+                    |protocols| protocols.iter().map(|p| p.clone().into_bytes()).collect(),
+                );
             options.set_transport(Transport::Tls(TlsConfiguration::Simple {
                 ca,
                 client_auth,

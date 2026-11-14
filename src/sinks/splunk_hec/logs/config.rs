@@ -8,17 +8,20 @@ use vector_lib::{
 
 use super::{encoder::HecLogsEncoder, request_builder::HecLogsRequestBuilder, sink::HecLogsSink};
 use crate::{
-    config::{DynValidatedSink, ValidatedSink},
+    config::ValidatedSink,
     http::HttpClient,
     sinks::{
         prelude::*,
         splunk_hec::common::{
             EndpointTarget, SplunkHecDefaultBatchSettings,
             acknowledgements::HecClientAcknowledgementsConfig,
-            build_healthcheck, build_http_batch_service, create_client,
+            build_healthcheck, build_http_service, create_client,
             service::{HecService, HttpRequestBuilder},
         },
-        util::{HttpEndpoint, http::HttpRetryLogic},
+        util::{
+            HttpEndpoint,
+            http::{RetryStrategy, http_response_retry_logic},
+        },
     },
     template::ConfinementConfig,
 };
@@ -99,25 +102,19 @@ pub struct HecLogsSinkConfig {
     ))]
     pub source: Option<Template>,
 
-    #[configurable(derived)]
     pub encoding: EncodingConfig,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub compression: Compression,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub batch: BatchConfig<SplunkHecDefaultBatchSettings>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub request: TowerRequestConfig,
 
-    #[configurable(derived)]
     pub tls: Option<TlsConfig>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub acknowledgements: HecClientAcknowledgementsConfig,
 
@@ -150,11 +147,9 @@ pub struct HecLogsSinkConfig {
     #[serde(default)]
     pub auto_extract_timestamp: Option<bool>,
 
-    #[configurable(derived)]
     #[serde(default = "default_endpoint_target")]
     pub endpoint_target: EndpointTarget,
 
-    #[configurable(derived)]
     #[serde(flatten)]
     pub confinement: ConfinementConfig,
 }
@@ -178,7 +173,7 @@ impl GenerateConfig for HecLogsSinkConfig {
             batch: BatchConfig::default(),
             request: TowerRequestConfig::default(),
             tls: None,
-            acknowledgements: Default::default(),
+            acknowledgements: HecClientAcknowledgementsConfig::default(),
             timestamp_nanos_key: None,
             timestamp_key: None,
             auto_extract_timestamp: None,
@@ -221,6 +216,7 @@ impl HecLogsSinkConfig {
             .transpose()?;
 
         let batch_settings = self.batch.into_batcher_settings()?;
+        self.encoding.validate()?;
 
         Ok(ValidatedHecLogsSink {
             index,
@@ -265,10 +261,6 @@ impl SinkConfig for HecLogsSinkConfig {
     fn acknowledgements(&self) -> &AcknowledgementsConfig {
         &self.acknowledgements.inner
     }
-
-    fn as_dyn_validated(&self) -> Option<&dyn DynValidatedSink> {
-        Some(self)
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -297,6 +289,10 @@ impl ValidatedSink for HecLogsSinkConfig {
 }
 
 impl HecLogsSinkConfig {
+    /// Builds the sink processor.
+    ///
+    /// # Errors
+    /// Returns an error if the encoding configuration is invalid.
     pub fn build_processor(
         &self,
         client: HttpClient,
@@ -329,8 +325,11 @@ impl HecLogsSinkConfig {
             self.compression,
         ));
         let http_service = ServiceBuilder::new()
-            .settings(request_settings, HttpRetryLogic::default())
-            .service(build_http_batch_service(
+            .settings(
+                request_settings,
+                http_response_retry_logic(RetryStrategy::Default),
+            )
+            .service(build_http_service(
                 client,
                 Arc::clone(&http_request_builder),
                 self.endpoint_target,
@@ -397,15 +396,15 @@ mod tests {
             source: None,
             encoding: JsonSerializerConfig::default().into(),
             compression: Compression::default(),
-            batch: Default::default(),
-            request: Default::default(),
+            batch: BatchConfig::default(),
+            request: TowerRequestConfig::default(),
             tls: None,
-            acknowledgements: Default::default(),
+            acknowledgements: HecClientAcknowledgementsConfig::default(),
             timestamp_nanos_key: None,
             timestamp_key: None,
             auto_extract_timestamp: None,
             endpoint_target: EndpointTarget::Event,
-            confinement: Default::default(),
+            confinement: ConfinementConfig::default(),
         };
 
         let validated = config.validate().expect("validation should succeed");

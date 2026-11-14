@@ -18,7 +18,7 @@ use vector_lib::{
 use vrl::value::Kind;
 
 use crate::{
-    config::{DynValidatedSink, ValidatedSink},
+    config::ValidatedSink,
     schema,
     sinks::{
         prelude::*,
@@ -30,7 +30,7 @@ use crate::{
 /// Configuration for the `pulsar` sink.
 #[configurable_component(sink("pulsar", "Publish observability events to Apache Pulsar topics."))]
 #[derive(Clone, Debug)]
-pub struct PulsarSinkConfig {
+pub(crate) struct PulsarSinkConfig {
     /// The endpoint to which the Pulsar client should connect to.
     ///
     /// The endpoint should specify the pulsar protocol and port.
@@ -62,21 +62,16 @@ pub struct PulsarSinkConfig {
     /// If omitted, no properties will be written.
     pub properties_key: Option<OptionalTargetPath>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(crate) batch: PulsarBatchConfig,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub compression: PulsarCompression,
 
-    #[configurable(derived)]
     pub encoding: EncodingConfig,
 
-    #[configurable(derived)]
     pub(crate) auth: Option<PulsarAuthConfig>,
 
-    #[configurable(derived)]
     #[serde(
         default,
         deserialize_with = "crate::serde::bool_or_struct",
@@ -84,15 +79,12 @@ pub struct PulsarSinkConfig {
     )]
     pub acknowledgements: AcknowledgementsConfig,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub connection_retry_options: Option<CustomConnectionRetryOptions>,
 
-    #[configurable(derived)]
     #[serde(default)]
     pub(crate) tls: Option<PulsarTlsOptions>,
 
-    #[configurable(derived)]
     #[serde(flatten)]
     pub confinement: ConfinementConfig,
 }
@@ -134,14 +126,13 @@ pub(crate) struct PulsarAuthConfig {
     #[configurable(metadata(docs::examples = "123456789"))]
     token: Option<SensitiveString>,
 
-    #[configurable(derived)]
     oauth2: Option<OAuth2Config>,
 }
 
 /// OAuth2-specific authentication configuration.
 #[configurable_component]
 #[derive(Clone, Debug)]
-pub struct OAuth2Config {
+pub(crate) struct OAuth2Config {
     /// The issuer URL.
     #[configurable(metadata(docs::examples = "${OAUTH2_ISSUER_URL}"))]
     #[configurable(metadata(docs::examples = "https://oauth2.issuer"))]
@@ -155,12 +146,12 @@ pub struct OAuth2Config {
     #[configurable(metadata(docs::examples = "data:application/json;base64,cHVsc2FyCg=="))]
     credentials_url: String,
 
-    /// The OAuth2 audience.
+    /// The `OAuth2` audience.
     #[configurable(metadata(docs::examples = "${OAUTH2_AUDIENCE}"))]
     #[configurable(metadata(docs::examples = "pulsar"))]
     audience: Option<String>,
 
-    /// The OAuth2 scope.
+    /// The `OAuth2` scope.
     #[configurable(metadata(docs::examples = "${OAUTH2_SCOPE}"))]
     #[configurable(metadata(docs::examples = "admin"))]
     scope: Option<String>,
@@ -170,7 +161,7 @@ pub struct OAuth2Config {
 #[configurable_component]
 #[derive(Clone, Copy, Debug, Default)]
 #[serde(rename_all = "lowercase")]
-pub enum PulsarCompression {
+pub(crate) enum PulsarCompression {
     /// No compression.
     #[default]
     None,
@@ -193,7 +184,7 @@ pub enum PulsarCompression {
     description = "Custom connection retry options configuration for the Pulsar client."
 )]
 #[derive(Clone, Debug)]
-pub struct CustomConnectionRetryOptions {
+pub(crate) struct CustomConnectionRetryOptions {
     /// Minimum delay between connection retries.
     #[configurable(metadata(docs::type_unit = "milliseconds"))]
     pub min_backoff_ms: Option<u64>,
@@ -221,7 +212,7 @@ pub struct CustomConnectionRetryOptions {
 #[configurable_component]
 #[configurable(description = "TLS options configuration for the Pulsar client.")]
 #[derive(Clone, Debug)]
-pub struct PulsarTlsOptions {
+pub(crate) struct PulsarTlsOptions {
     /// File path containing a list of PEM encoded certificates.
     #[configurable(metadata(docs::examples = "/etc/certs/chain.pem"))]
     pub ca_file: String,
@@ -231,7 +222,7 @@ pub struct PulsarTlsOptions {
     /// Do NOT set this to `false` unless you understand the risks of not verifying the validity of certificates.
     pub verify_certificate: Option<bool>,
 
-    /// Whether hostname verification is enabled when verify_certificate is false.
+    /// Whether hostname verification is enabled when `verify_certificate` is false.
     ///
     /// Set to true if not specified.
     pub verify_hostname: Option<bool>,
@@ -246,11 +237,11 @@ impl Default for PulsarSinkConfig {
             producer_name: None,
             properties_key: None,
             partition_key_field: None,
-            batch: Default::default(),
-            compression: Default::default(),
+            batch: PulsarBatchConfig::default(),
+            compression: PulsarCompression::default(),
             encoding: TextSerializerConfig::default().into(),
             auth: None,
-            acknowledgements: Default::default(),
+            acknowledgements: AcknowledgementsConfig::default(),
             connection_retry_options: None,
             tls: None,
             confinement: ConfinementConfig::default(),
@@ -314,7 +305,7 @@ impl PulsarSinkConfig {
                             .map_or(default_retry_options.keep_alive, |secs| {
                                 Duration::from_secs(secs)
                             }),
-                        connection_max_idle: Default::default(),
+                        connection_max_idle: Duration::default(),
                     }
                 });
 
@@ -331,21 +322,21 @@ impl PulsarSinkConfig {
             builder = builder
                 .with_tls_hostname_verification_enabled(options.verify_hostname.unwrap_or(true));
         }
-        builder.build().map_err(|e| e.into()).await
+        builder.build().map_err(Into::into).await
     }
 
     pub(crate) fn build_producer_options(&self) -> ProducerOptions {
         let mut opts = ProducerOptions {
             encrypted: None,
             access_mode: Some(0),
-            metadata: Default::default(),
+            metadata: std::collections::BTreeMap::default(),
             schema: None,
             batch_size: self.batch.max_events,
             batch_byte_size: self.batch.max_bytes,
             compression: None,
-            batch_timeout: Default::default(),
+            batch_timeout: Option::default(),
             block_queue_if_full: Default::default(),
-            routing_policy: Default::default(),
+            routing_policy: Option::default(),
         };
 
         match &self.compression {
@@ -353,22 +344,22 @@ impl PulsarSinkConfig {
             PulsarCompression::Lz4 => {
                 opts.compression = Some(compression::Compression::Lz4(
                     compression::CompressionLz4::default(),
-                ))
+                ));
             }
             PulsarCompression::Zlib => {
                 opts.compression = Some(compression::Compression::Zlib(
                     compression::CompressionZlib::default(),
-                ))
+                ));
             }
             PulsarCompression::Zstd => {
                 opts.compression = Some(compression::Compression::Zstd(
                     compression::CompressionZstd::default(),
-                ))
+                ));
             }
             PulsarCompression::Snappy => {
                 opts.compression = Some(compression::Compression::Snappy(
                     compression::CompressionSnappy::default(),
-                ))
+                ));
             }
         }
 
@@ -428,14 +419,10 @@ impl SinkConfig for PulsarSinkConfig {
     fn acknowledgements(&self) -> &AcknowledgementsConfig {
         &self.acknowledgements
     }
-
-    fn as_dyn_validated(&self) -> Option<&dyn DynValidatedSink> {
-        Some(self)
-    }
 }
 
 #[derive(Clone, Debug)]
-pub struct ValidatedPulsarSink {
+pub(crate) struct ValidatedPulsarSink {
     topic: ConfinedTemplate,
 }
 
@@ -448,7 +435,7 @@ impl ValidatedSink for PulsarSinkConfig {
             validate_auth_shape(auth)?;
         }
         let url = url::Url::parse(&self.endpoint)
-            .map_err(|e| format!("Invalid Pulsar endpoint `{}`: {}", self.endpoint, e))?;
+            .map_err(|e| format!("Invalid Pulsar endpoint `{}`: {e}", self.endpoint))?;
         if !matches!(url.scheme(), "pulsar" | "pulsar+ssl") {
             return Err(format!(
                 "Invalid Pulsar endpoint `{}`: scheme must be pulsar or pulsar+ssl",
@@ -461,6 +448,7 @@ impl ValidatedSink for PulsarSinkConfig {
                 format!("Invalid Pulsar endpoint `{}`: missing host", self.endpoint).into(),
             );
         }
+        self.encoding.validate()?;
         let topic = self
             .topic
             .clone()
@@ -480,7 +468,7 @@ impl ValidatedSink for PulsarSinkConfig {
             .await
             .map_err(|e| super::sink::BuildError::CreatePulsarSink { source: e })?;
 
-        let sink = PulsarSink::new(client, self.clone(), topic.clone())?;
+        let sink = PulsarSink::new(&client, self.clone(), topic.clone())?;
         let hc = healthcheck(self.clone(), topic.clone()).boxed();
         Ok((VectorSink::from_event_streamsink(sink), hc))
     }

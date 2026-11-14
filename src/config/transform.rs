@@ -6,7 +6,6 @@ use std::{
 
 use async_trait::async_trait;
 use dyn_clone::DynClone;
-use metrics::Counter;
 use serde::Serialize;
 use vector_lib::{
     config::{GlobalOptions, Input, LogNamespace, TransformOutput},
@@ -22,8 +21,9 @@ use vector_lib::{
 };
 use vector_vrl_metrics::MetricsStorage;
 
+use vector_lib::extra_context::ExtraContext;
+
 use super::{ComponentKey, OutputId, dot_graph::GraphConfig, schema::Options as SchemaOptions};
-use crate::extra_context::ExtraContext;
 
 pub type BoxedTransform = Box<dyn TransformConfig>;
 
@@ -55,17 +55,14 @@ impl<T: TransformConfig + 'static> From<T> for BoxedTransform {
 
 /// Fully resolved transform component.
 #[configurable_component]
-#[configurable(metadata(docs::component_base_type = "transform"))]
 #[derive(Clone, Debug)]
 pub struct TransformOuter<T>
 where
     T: Configurable + Serialize + 'static,
 {
-    #[configurable(derived)]
     #[serde(default, skip_serializing_if = "vector_lib::serde::is_default")]
     pub graph: GraphConfig,
 
-    #[configurable(derived)]
     pub inputs: Inputs<T>,
 
     /// Enable CPU usage metrics for this transform.
@@ -76,6 +73,10 @@ where
     ///
     /// Defaults to `false`. Enable only for transforms where CPU attribution is needed, as it
     /// adds a `clock_gettime` call on every future poll.
+    ///
+    /// On Windows, `component_cpu_usage_ns_total` is a rough estimate: thread CPU time advances
+    /// only at the scheduler clock tick (typically 15.6 ms), so short polls are counted either as
+    /// zero or as a whole tick.
     #[serde(default, skip_serializing_if = "vector_lib::serde::is_default")]
     pub measure_cpu_usage: bool,
 
@@ -98,7 +99,7 @@ where
         TransformOuter {
             inputs,
             inner,
-            graph: Default::default(),
+            graph: GraphConfig::default(),
             measure_cpu_usage: false,
         }
     }
@@ -155,35 +156,30 @@ pub struct TransformContext {
     /// Extra context data provided by the running app and shared across all components. This can be
     /// used to pass shared settings or other data from outside the components.
     pub extra_context: ExtraContext,
-
-    /// Counter handle for `component_cpu_usage_ns_total`, pre-tagged with this transform's
-    /// component identity. `Some` only when `measure_cpu_usage` is enabled on the
-    /// `TransformOuter`. Transforms that spawn helper tokio tasks at construction time
-    /// (e.g. `aws_ec2_metadata`, `throttle`) clone this and pass it to [`crate::cpu_time::spawn_timed`] so
-    /// their CPU is attributed to the component alongside the main transform task.
-    pub cpu_ns: Option<Counter>,
 }
 
 impl Default for TransformContext {
+    // https://github.com/vectordotdev/vector/issues/23659
+    #[allow(
+        clippy::default_trait_access,
+        reason = "Preserve inferred default types"
+    )]
     fn default() -> Self {
         Self {
-            key: Default::default(),
-            globals: Default::default(),
+            key: Option::default(),
+            globals: GlobalOptions::default(),
             enrichment_tables: Default::default(),
-            metrics_storage: Default::default(),
+            metrics_storage: MetricsStorage::default(),
             schema_definitions: HashMap::from([(None, HashMap::new())]),
             merged_schema_definition: schema::Definition::any(),
             schema: SchemaOptions::default(),
-            extra_context: Default::default(),
-            cpu_ns: None,
+            extra_context: ExtraContext::default(),
         }
     }
 }
 
 impl TransformContext {
-    // clippy allow avoids an issue where vrl is flagged off and `globals` is
-    // the sole field in the struct
-    #[allow(clippy::needless_update)]
+    #[must_use]
     pub fn new_with_globals(globals: GlobalOptions) -> Self {
         Self {
             globals,
@@ -192,6 +188,7 @@ impl TransformContext {
     }
 
     #[cfg(test)]
+    #[must_use]
     pub fn new_test(
         schema_definitions: HashMap<Option<String>, HashMap<OutputId, schema::Definition>>,
     ) -> Self {
@@ -205,7 +202,8 @@ impl TransformContext {
     /// and will override any global default if it's set.
     ///
     /// This should only be used for transforms that don't originate from a log (eg: `metric_to_log`)
-    /// Most transforms will keep the log_namespace value that already exists on the event.
+    /// Most transforms will keep the `log_namespace` value that already exists on the event.
+    #[must_use]
     pub fn log_namespace(&self, namespace: Option<bool>) -> LogNamespace {
         namespace
             .or(self.schema.log_namespace)
@@ -302,7 +300,7 @@ pub trait TransformConfig: DynClone + NamedComponent + core::fmt::Debug + Send +
 
 dyn_clone::clone_trait_object!(TransformConfig);
 
-/// Often we want to call outputs just to retrieve the OutputId's without needing
+/// Often we want to call outputs just to retrieve the `OutputId`'s without needing
 /// the schema definitions.
 pub fn get_transform_output_ids<T: TransformConfig + ?Sized>(
     transform: &T,
