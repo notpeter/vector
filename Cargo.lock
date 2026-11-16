@@ -628,9 +628,8 @@ dependencies = [
 
 [[package]]
 name = "arrow-flight"
-version = "60.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8709a798bd0825cb6207861aad09093133d64314c25569132dbc7f9f083879a5"
+version = "60.0.0"
+source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=9058096a1ba2c44781f089ad036631064e4b4727#9058096a1ba2c44781f089ad036631064e4b4727"
 dependencies = [
  "arrow-array 60.1.0",
  "arrow-buffer 60.1.0",
@@ -3681,12 +3680,11 @@ dependencies = [
 
 [[package]]
 name = "databricks-zerobus-ingest-sdk"
-version = "3.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f04ec9f3607646b70c70fad9c99bd55910dadd141826dfdf41666d5c191ce079"
+version = "3.2.0"
+source = "git+https://github.com/notpeter/zerobus-sdk.git?rev=9058096a1ba2c44781f089ad036631064e4b4727#9058096a1ba2c44781f089ad036631064e4b4727"
 dependencies = [
  "arrow-array 60.1.0",
- "arrow-flight 60.1.0",
+ "arrow-flight 60.0.0",
  "arrow-ipc 60.1.0",
  "arrow-schema 60.1.0",
  "async-trait",
@@ -5284,7 +5282,7 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 [[package]]
 name = "heim"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "heim-common",
  "heim-cpu",
@@ -5298,7 +5296,7 @@ dependencies = [
 [[package]]
 name = "heim-common"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "cfg-if",
  "core-foundation 0.9.3",
@@ -5316,7 +5314,7 @@ dependencies = [
 [[package]]
 name = "heim-cpu"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "cfg-if",
  "futures",
@@ -5334,7 +5332,7 @@ dependencies = [
 [[package]]
 name = "heim-disk"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "bitflags 1.3.2",
  "cfg-if",
@@ -5350,7 +5348,7 @@ dependencies = [
 [[package]]
 name = "heim-host"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "cfg-if",
  "heim-common",
@@ -5367,7 +5365,7 @@ dependencies = [
 [[package]]
 name = "heim-memory"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "cfg-if",
  "heim-common",
@@ -5381,7 +5379,7 @@ dependencies = [
 [[package]]
 name = "heim-net"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "bitflags 1.3.2",
  "cfg-if",
@@ -5397,7 +5395,7 @@ dependencies = [
 [[package]]
 name = "heim-runtime"
 version = "0.1.0-rc.1"
-source = "git+https://github.com/vectordotdev/heim.git?branch=update-deps#b62e0420231552ef079e86ecff1e6b98def6a553"
+source = "git+https://github.com/notpeter/heim.git?rev=1f439bcac8188fd9d53854b1aba87568880fc82f#1f439bcac8188fd9d53854b1aba87568880fc82f"
 dependencies = [
  "futures",
  "futures-timer",
@@ -6972,18 +6970,18 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "lua-src"
-version = "550.0.0"
+version = "550.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e836dc8ae16806c9bdcf42003a88da27d163433e3f9684c52f0301258004a4fb"
+checksum = "75c110c2fa33f34e0de05448e1f3eb2e0631e7a69e2d8ae1586cffc9fc9f9949"
 dependencies = [
  "cc",
 ]
 
 [[package]]
 name = "luajit-src"
-version = "210.6.6+707c12b"
+version = "210.7.2+b925b3e"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a86cc925d4053d0526ae7f5bc765dbd0d7a5d1a63d43974f4966cb349ca63295"
+checksum = "920cf654b23d217c550ceea57c32cd2a413ea27b6d47ed77b5ee0cf655adefa6"
 dependencies = [
  "cc",
  "which",
@@ -7302,26 +7300,26 @@ dependencies = [
 
 [[package]]
 name = "mlua"
-version = "0.11.6"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccd36acfa49ce6ee56d1307a061dd302c564eee757e6e4cd67eb4f7204846fab"
+checksum = "ad72ffa037cf5970c9860674f32f703fda25d86cf217475fe7a79c5f9961bcaa"
 dependencies = [
  "bstr",
  "either",
+ "inventory",
  "libc",
  "mlua-sys",
  "mlua_derive",
  "num-traits",
  "parking_lot 0.12.5",
  "rustc-hash",
- "rustversion",
 ]
 
 [[package]]
 name = "mlua-sys"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f1c3a7fc7580227ece249fd90aa2fa3b39eb2b49d3aec5e103b3e85f2c3dfc8"
+checksum = "92136787b906d4e55cfe96cd6c62e010bb1a56889d0d6cf83eb016dbad07576b"
 dependencies = [
  "cc",
  "cfg-if",
@@ -7333,16 +7331,12 @@ dependencies = [
 
 [[package]]
 name = "mlua_derive"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "465bddde514c4eb3b50b543250e97c1d4b284fa3ef7dc0ba2992c77545dbceb2"
+checksum = "0232231813b214d44b57c7678e7dbbcfaac35bd1a01acef0dad7c5dfdc1b1973"
 dependencies = [
- "itertools 0.14.0",
- "once_cell",
- "proc-macro-error2",
  "proc-macro2 1.0.107",
  "quote 1.0.47",
- "regex",
  "syn 2.0.119",
 ]
 
@@ -8963,28 +8957,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proc-macro-error-attr2"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96de42df36bb9bba5542fe9f1a054b8cc87e172759a1868aa05c1f3acc89dfc5"
-dependencies = [
- "proc-macro2 1.0.107",
- "quote 1.0.47",
-]
-
-[[package]]
-name = "proc-macro-error2"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11ec05c52be0a07b08061f7dd003e7d7092e0472bc731b4af7bb1ef876109802"
-dependencies = [
- "proc-macro-error-attr2",
- "proc-macro2 1.0.107",
- "quote 1.0.47",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "proc-macro-hack"
 version = "0.5.20+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9849,8 +9821,7 @@ dependencies = [
 [[package]]
 name = "rdkafka-sys"
 version = "4.10.0+2.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e234cf318915c1059d4921ef7f75616b5219b10b46e9f3a511a15eb4b56a3f77"
+source = "git+https://github.com/notpeter/rust-rdkafka.git?rev=96567500c0dd8c12a5d49ec15368c7bc13c0f707#96567500c0dd8c12a5d49ec15368c7bc13c0f707"
 dependencies = [
  "cmake",
  "curl-sys",
@@ -11997,9 +11968,8 @@ dependencies = [
 
 [[package]]
 name = "tikv-jemalloc-sys"
-version = "0.7.1+5.3.1-0-g81034ce1f1373e37dc865038e1bc8eeecf559ce8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a2825c78386b4ae0314074867860ba9577875de945f05992c38815cbec327f0"
+version = "0.7.0+5.4.0-95-gecb4556becc8d0b54ab9627d8b5508a5295904ff"
+source = "git+https://github.com/notpeter/jemallocator.git?rev=48baf450abc8199af0deff3ffc145d0c0a37aa02#48baf450abc8199af0deff3ffc145d0c0a37aa02"
 dependencies = [
  "cc",
  "libc",
@@ -12008,8 +11978,7 @@ dependencies = [
 [[package]]
 name = "tikv-jemallocator"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "249f09e49ab1609436f34c776e84231bead18d6a955f119f939bdc1d847561bd"
+source = "git+https://github.com/notpeter/jemallocator.git?rev=48baf450abc8199af0deff3ffc145d0c0a37aa02#48baf450abc8199af0deff3ffc145d0c0a37aa02"
 dependencies = [
  "libc",
  "tikv-jemalloc-sys",
@@ -13864,7 +13833,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vrl"
 version = "0.38.0"
-source = "git+https://github.com/vectordotdev/vrl.git?branch=main#9da8fe4603ae7259887125b350474906842d447d"
+source = "git+https://github.com/notpeter/vrl.git?rev=729a05c373115b433ac09a0ff33faf696cd632d4#729a05c373115b433ac09a0ff33faf696cd632d4"
 dependencies = [
  "aes",
  "aes-siv",
