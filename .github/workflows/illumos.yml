@@ -60,6 +60,13 @@ jobs:
             export CARGO_INCREMENTAL=0
             export CARGO_PROFILE_RELEASE_LTO=thin
 
+            # Give rustc enough swap reservation to spawn the linker after LTO.
+            zfs create -V 8G rpool/ci-swap || exit 1
+            swap -a /dev/zvol/dsk/rpool/ci-swap || exit 1
+            swap -lh
+            swap -sh
+            df -h
+
             rustc --version
             cargo --version
             protoc --version
