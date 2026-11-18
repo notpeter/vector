@@ -1,0 +1,67 @@
+name: Illumos Test Release
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: illumos-test-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: >-
+      github.repository == 'notpeter/vector' &&
+      (github.event_name == 'push' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'illumos-test-release') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'illumos-test-release')))
+    uses: ./.github/workflows/illumos.yml
+
+  release:
+    name: Publish illumos test prerelease
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download illumos release artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vector-x86_64-unknown-illumos-${{ github.sha }}
+          path: illumos-artifacts
+
+      - name: Create test prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: illumos-test-${{ github.run_id }}-${{ github.run_attempt }}
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_NAME: >-
+            ${{ github.event_name == 'pull_request' && format('PR #{0} (merge commit)', github.event.pull_request.number) || 'master' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cat > release-notes.md <<EOF
+          Test build of Vector for x86_64-unknown-illumos.
+
+          Source: $SOURCE_NAME
+          Commit: $SOURCE_SHA
+          Workflow run: $RUN_URL
+
+          Built on OmniOS using the target-x86_64-unknown-illumos feature set.
+          The archive and its SHA-256 checksum are attached below.
+          EOF
+
+          gh release create "$RELEASE_TAG" \
+            --target "$SOURCE_SHA" \
+            --title "Vector illumos test: $SOURCE_NAME ($RELEASE_TAG)" \
+            --notes-file release-notes.md \
+            --prerelease \
+            --latest=false \
+            illumos-artifacts/*.tar.gz illumos-artifacts/*.sha256

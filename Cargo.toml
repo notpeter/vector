@@ -211,7 +211,7 @@ libc = { version = "0.2", default-features = false, features = ["std"] }
 metrics = "0.24.2"
 metrics-tracing-context = { version = "0.18.1", default-features = false }
 metrics-util = { version = "0.20.4", default-features = false, features = ["registry"] }
-mlua = { version = "0.12.2", default-features = false, features = ["lua54", "send", "vendored"] }
+mlua = { git = "https://github.com/notpeter/mlua.git", rev = "66d6cdc0a2e58b40b70e82bdb35af0597ddc6479", version = "0.12.2", default-features = false, features = ["lua54", "send", "vendored"] }
 nom = { version = "8.0.0", default-features = false }
 ordered-float = { version = "5.3.0", default-features = false }
 pastey = { version = "0.2", default-features = false }
@@ -265,7 +265,7 @@ vector-common-macros = { path = "lib/vector-common-macros" }
 vector-lib = { path = "lib/vector-lib", default-features = false }
 vector-vrl-category = { path = "lib/vector-vrl/category" }
 vector-vrl-functions = { path = "lib/vector-vrl/functions", default-features = false }
-vrl = { default-features = false, features = ["arbitrary", "cli", "test", "test_framework", "stdlib-base"] , git = "https://github.com/vectordotdev/vrl.git", branch = "main" }
+vrl = { git = "https://github.com/notpeter/vrl.git", rev = "426d2f26b0d6d5644b9e8d3fc2640ceac06f2a8c", default-features = false, features = ["arbitrary", "cli", "test", "test_framework", "stdlib-base"] }
 zstd = { version = "0.13.0", default-features = false }
 mock_instant = { version = "0.6" }
 serial_test = { version = "4.0" }
@@ -391,7 +391,7 @@ protobuf = { workspace = true, optional = true }
 prost-types = { workspace = true, optional = true }
 
 # Databricks Zerobus
-databricks-zerobus-ingest-sdk = { version = "3.1.1", optional = true, features = ["arrow-flight"] }
+databricks-zerobus-ingest-sdk = { version = "3.2.0", optional = true, features = ["arrow-flight"] }
 
 # GCP
 goauth = { version = "0.16.0", optional = true }
@@ -512,9 +512,8 @@ warp = { version = "0.4.3", default-features = false }
 zstd.workspace = true
 arr_macro = { version = "0.2.1" }
 
-# depending on fork for bumped nix dependency
-# https://github.com/heim-rs/heim/pull/360
-heim = { git = "https://github.com/vectordotdev/heim.git", branch = "update-deps", default-features = false, features = ["disk"] }
+# depending on fork for bumped nix dependency and illumos support
+heim = { git = "https://github.com/notpeter/heim.git", rev = "1f439bcac8188fd9d53854b1aba87568880fc82f", default-features = false, features = ["disk"] }
 
 # make sure to update the external docs when the Lua version changes
 mlua = { workspace = true, features = ["macros"], optional = true }
@@ -579,6 +578,10 @@ zstd = { workspace = true, features = ["zdict_builder"] }
 # The `heim` crates depend on `ntapi` 0.3.7 on Windows, but that version has an
 # unaligned access bug fixed in the following revision.
 ntapi = { git = "https://github.com/MSxDOS/ntapi.git", rev = "24fc1e47677fc9f6e38e5f154e6011dc9b270da6" }
+databricks-zerobus-ingest-sdk = { git = "https://github.com/notpeter/zerobus-sdk.git", rev = "9058096a1ba2c44781f089ad036631064e4b4727" }
+rdkafka-sys = { git = "https://github.com/notpeter/rust-rdkafka.git", rev = "96567500c0dd8c12a5d49ec15368c7bc13c0f707" }
+tikv-jemallocator = { git = "https://github.com/notpeter/jemallocator.git", rev = "48baf450abc8199af0deff3ffc145d0c0a37aa02" }
+tikv-jemalloc-sys = { git = "https://github.com/notpeter/jemallocator.git", rev = "48baf450abc8199af0deff3ffc145d0c0a37aa02" }
 
 [features]
 # Default features for *-unknown-linux-gnu and *-apple-darwin.
@@ -649,6 +652,7 @@ target-arm-unknown-linux-gnueabi =      ["target-base", "tikv-jemallocator"]
 target-arm-unknown-linux-musleabi =     ["target-base"]
 target-x86_64-unknown-linux-gnu =       ["target-base", "tikv-jemallocator", "vendored"]
 target-x86_64-unknown-linux-musl =      ["target-base", "tikv-jemallocator"]
+target-x86_64-unknown-illumos =         ["target-base", "tikv-jemallocator"]
 # Apple targets opt into `gssapi` (dynamic linkage to system libsasl2 + Apple's
 # GSS framework). The `gssapi-vendored` path does not currently link on
 # macOS arm64 (unresolved gss_* symbols).
