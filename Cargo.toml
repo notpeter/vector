@@ -207,7 +207,7 @@ libc = { version = "0.2", default-features = false, features = ["std"] }
 metrics = "0.24.2"
 metrics-tracing-context = { version = "0.18.1", default-features = false }
 metrics-util = { version = "0.20.4", default-features = false, features = ["registry"] }
-mlua = { version = "0.12.0", default-features = false, features = ["lua54", "send", "vendored"] }
+mlua = { git = "https://github.com/notpeter/mlua.git", rev = "66d6cdc0a2e58b40b70e82bdb35af0597ddc6479", version = "0.12.2", default-features = false, features = ["lua54", "send", "vendored"] }
 nom = { version = "8.0.0", default-features = false }
 ordered-float = { version = "5.3.0", default-features = false }
 pastey = { version = "0.2", default-features = false }
@@ -260,7 +260,7 @@ vector-common-macros = { path = "lib/vector-common-macros" }
 vector-lib = { path = "lib/vector-lib", default-features = false }
 vector-vrl-category = { path = "lib/vector-vrl/category" }
 vector-vrl-functions = { path = "lib/vector-vrl/functions", default-features = false }
-vrl = { git = "https://github.com/notpeter/vrl.git", rev = "729a05c373115b433ac09a0ff33faf696cd632d4", default-features = false, features = ["arbitrary", "cli", "test", "test_framework", "stdlib-base"] }
+vrl = { git = "https://github.com/notpeter/vrl.git", rev = "426d2f26b0d6d5644b9e8d3fc2640ceac06f2a8c", default-features = false, features = ["arbitrary", "cli", "test", "test_framework", "stdlib-base"] }
 zstd = { version = "0.13.0", default-features = false }
 mock_instant = { version = "0.6" }
 serial_test = { version = "4.0" }
